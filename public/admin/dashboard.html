@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        button {
+            padding: 5px 10px;
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <h2>Admin Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<h3>List User</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="user-table-body">
+        <tr>
+            <td colspan="4">Loading...</td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    // 🔥 Ambil token admin (disimpan waktu login)
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+        alert("Anda harus login sebagai admin");
+        window.location.href = "./login.html";
+    }
+
+    async function loadUsers() {
+        try {
+            const res = await fetch("/api/admin/users", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await res.json();
+            const tbody = document.getElementById("user-table-body");
+            tbody.innerHTML = "";
+
+            data.forEach(user => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.email}</td>
+                    <td>${user.username}</td>
+                    <td><button onclick="deleteUser(${user.id})">Delete</button></td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function deleteUser(id) {
+        if (!confirm("Hapus user ini?")) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            const result = await res.json();
+            alert(result.message);
+            loadUsers(); // refresh list
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("adminToken");
+        window.location.href = "./login.html";
+    }
+
+    loadUsers();
+</script>
+
+</body>
+</html>
